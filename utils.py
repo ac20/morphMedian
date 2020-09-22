@@ -11,6 +11,7 @@ import numpy as np
 class unionfind:
     
     def __init__(self, size_data):
+        self.size_data = size_data
         self.parent = np.arange(size_data, dtype=np.int32)
         self.size = np.ones(size_data, dtype=np.int32)
         self.comp = dict([(x, set([x])) for x in range(size_data)])
@@ -48,8 +49,9 @@ class unionfind:
     def generate_comps(self):
         """Generate the components
         """
-        for r, comp in self.comp.items():
-            yield r, np.array(list(comp),dtype=np.int32)    
+        comp = np.array([self.find(x) for x in range(self.size_data)])
+        for l in np.unique(comp):
+            yield l, np.where(comp==l)[0]
     
 
 #----------------------------------------------------------------------------------------------#
@@ -258,47 +260,47 @@ def ensemble_watershed(X, graph, seeds, number_estimators=10, num_features_selec
 #-------------------------------------- NN MODEL --------------------------------------#
 #--------------------------------------------------------------------------------------#
 
-from keras.layers import Dense, Input, Activation, Lambda, Dropout
-from keras.models import Model
-from keras.optimizers import Adam, RMSprop
-import keras.backend as K
+# from keras.layers import Dense, Input, Activation, Lambda, Dropout
+# from keras.models import Model
+# from keras.optimizers import Adam, RMSprop
+# import keras.backend as K
 
-def euclidean_distance(vects):
-    """Return the eucliden distance between the inputs
-    """
-    x, y = vects
-    sum_square = K.sum(K.square(x-y), axis=1, keepdims=True)
-    return K.sqrt(K.maximum(sum_square, K.epsilon()))
+# def euclidean_distance(vects):
+#     """Return the eucliden distance between the inputs
+#     """
+#     x, y = vects
+#     sum_square = K.sum(K.square(x-y), axis=1, keepdims=True)
+#     return K.sqrt(K.maximum(sum_square, K.epsilon()))
 
-def base_model(input_size):
+# def base_model(input_size):
     
-    inp = Input((input_size,))
-    out = Dense(128, activation='relu')(inp)
-    out = Dense(64, activation='relu')(out)
-    out = Dense(32, activation='relu')(out)    
-    M = Model(inp, out)
+#     inp = Input((input_size,))
+#     out = Dense(128, activation='relu')(inp)
+#     out = Dense(64, activation='relu')(out)
+#     out = Dense(32, activation='relu')(out)    
+#     M = Model(inp, out)
     
-    return M
+#     return M
 
-def model(input_size):
+# def model(input_size):
     
-    M_rep = base_model(input_size)
+#     M_rep = base_model(input_size)
     
-    inpa = Input((input_size,))
-    outa = M_rep(inpa)
+#     inpa = Input((input_size,))
+#     outa = M_rep(inpa)
     
-    inpb = Input((input_size,))
-    outb = M_rep(inpb)
+#     inpb = Input((input_size,))
+#     outb = M_rep(inpb)
     
-    out = Lambda(euclidean_distance)([outa, outb])
-    out = Dense(1, activation='sigmoid')(out)
+#     out = Lambda(euclidean_distance)([outa, outb])
+#     out = Dense(1, activation='sigmoid')(out)
     
-    M = Model([inpa, inpb], out )
+#     M = Model([inpa, inpb], out )
     
-    opt = Adam(lr=0.01)
-    M.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
+#     opt = Adam(lr=0.01)
+#     M.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
     
-    return M, M_rep
+#     return M, M_rep
     
 
 #--------------------------------------------------------------------------------------#
@@ -306,70 +308,70 @@ def model(input_size):
 #--------------------------------------------------------------------------------------#
 
 
-def euclidean_distance(vects):
-    x, y = vects
-    sum_square = K.sum(K.square(x - y), axis=1, keepdims=True)
-    return K.sqrt(K.maximum(sum_square, K.epsilon()))
+# def euclidean_distance(vects):
+#     x, y = vects
+#     sum_square = K.sum(K.square(x - y), axis=1, keepdims=True)
+#     return K.sqrt(K.maximum(sum_square, K.epsilon()))
 
 
-def eucl_dist_output_shape(shapes):
-    shape1, shape2 = shapes
-    return (shape1[0], 1)
+# def eucl_dist_output_shape(shapes):
+#     shape1, shape2 = shapes
+#     return (shape1[0], 1)
 
 
-def contrastive_loss(y_true, y_pred):
-    '''Contrastive loss from Hadsell-et-al.'06
-    http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
-    '''
-    margin = 1
-    sqaure_pred = K.square(y_pred)
-    margin_square = K.square(K.maximum(margin - y_pred, 0))
-    return K.mean(y_true * sqaure_pred + (1 - y_true) * margin_square)
+# def contrastive_loss(y_true, y_pred):
+#     '''Contrastive loss from Hadsell-et-al.'06
+#     http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
+#     '''
+#     margin = 1
+#     sqaure_pred = K.square(y_pred)
+#     margin_square = K.square(K.maximum(margin - y_pred, 0))
+#     return K.mean(y_true * sqaure_pred + (1 - y_true) * margin_square)
 
-def compute_accuracy(y_true, y_pred):
-    '''Compute classification accuracy with a fixed threshold on distances.
-    '''
-    pred = y_pred.ravel() < 0.5
-    return np.mean(pred == y_true)
-
-
-def accuracy(y_true, y_pred):
-    '''Compute classification accuracy with a fixed threshold on distances.
-    '''
-    return K.mean(K.equal(y_true, K.cast(y_pred < 0.5, y_true.dtype)))
-
-def base_modelV2(input_size):
-    """ Base network
-    """
-    inp = Input((input_size,))
-    x = Dense(1024, activation='relu')(inp)
-    x = Dense(512, activation='relu')(x)
-    x = Dense(256, activation='relu')(x)
-    x = Dense(128, activation='relu')(x)
-    x = Dense(64, activation='relu')(x)
-    x = Dense(32, activation='relu')(x)
-    return Model(inp, x)
+# def compute_accuracy(y_true, y_pred):
+#     '''Compute classification accuracy with a fixed threshold on distances.
+#     '''
+#     pred = y_pred.ravel() < 0.5
+#     return np.mean(pred == y_true)
 
 
-def modelV2(input_size):
+# def accuracy(y_true, y_pred):
+#     '''Compute classification accuracy with a fixed threshold on distances.
+#     '''
+#     return K.mean(K.equal(y_true, K.cast(y_pred < 0.5, y_true.dtype)))
+
+# def base_modelV2(input_size):
+#     """ Base network
+#     """
+#     inp = Input((input_size,))
+#     x = Dense(1024, activation='relu')(inp)
+#     x = Dense(512, activation='relu')(x)
+#     x = Dense(256, activation='relu')(x)
+#     x = Dense(128, activation='relu')(x)
+#     x = Dense(64, activation='relu')(x)
+#     x = Dense(32, activation='relu')(x)
+#     return Model(inp, x)
+
+
+# def modelV2(input_size):
     
-    M_rep = base_modelV2(input_size)
+#     M_rep = base_modelV2(input_size)
     
-    inpa = Input((input_size,))
-    outa = M_rep(inpa)
+#     inpa = Input((input_size,))
+#     outa = M_rep(inpa)
     
-    inpb = Input((input_size,))
-    outb = M_rep(inpb)
+#     inpb = Input((input_size,))
+#     outb = M_rep(inpb)
     
-    out = Lambda(euclidean_distance)([outa, outb])
-#     out = Dense(1, activation='sigmoid')(out)
+#     out = Lambda(euclidean_distance)([outa, outb])
+# #     out = Dense(1, activation='sigmoid')(out)
     
-    M = Model([inpa, inpb], out )
+#     M = Model([inpa, inpb], out )
     
-    opt = Adam(lr=0.0005)
-    M.compile(optimizer=opt, loss=contrastive_loss, metrics=[accuracy])
+#     opt = Adam(lr=0.0005)
+#     M.compile(optimizer=opt, loss=contrastive_loss, metrics=[accuracy])
     
-    return M, M_rep
+#     return M, M_rep
 
 
 
@@ -378,67 +380,67 @@ def modelV2(input_size):
 #-----------------------------------------------------------------------------------------#
 
 
-def euclidean_distance(vects):
-    x, y = vects
-    sum_square = K.sum(K.square(x - y), axis=1, keepdims=True)
-    return K.sqrt(K.maximum(sum_square, K.epsilon()))
+# def euclidean_distance(vects):
+#     x, y = vects
+#     sum_square = K.sum(K.square(x - y), axis=1, keepdims=True)
+#     return K.sqrt(K.maximum(sum_square, K.epsilon()))
 
 
-def eucl_dist_output_shape(shapes):
-    shape1, shape2 = shapes
-    return (shape1[0], 1)
+# def eucl_dist_output_shape(shapes):
+#     shape1, shape2 = shapes
+#     return (shape1[0], 1)
 
 
-def contrastive_loss(y_true, y_pred):
-    '''Contrastive loss from Hadsell-et-al.'06
-    http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
-    '''
-    margin = 1
-    sqaure_pred = K.square(y_pred)
-    margin_square = K.square(K.maximum(margin - y_pred, 0))
-    return K.mean(y_true * sqaure_pred + (1 - y_true) * margin_square)
+# def contrastive_loss(y_true, y_pred):
+#     '''Contrastive loss from Hadsell-et-al.'06
+#     http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
+#     '''
+#     margin = 1
+#     sqaure_pred = K.square(y_pred)
+#     margin_square = K.square(K.maximum(margin - y_pred, 0))
+#     return K.mean(y_true * sqaure_pred + (1 - y_true) * margin_square)
 
-def compute_accuracy(y_true, y_pred):
-    '''Compute classification accuracy with a fixed threshold on distances.
-    '''
-    pred = y_pred.ravel() < 0.5
-    return np.mean(pred == y_true)
-
-
-def accuracy(y_true, y_pred):
-    '''Compute classification accuracy with a fixed threshold on distances.
-    '''
-    return K.mean(K.equal(y_true, K.cast(y_pred < 0.5, y_true.dtype)))
-
-def base_modelV3(input_size):
-    """ Base network
-    """
-    inp = Input((input_size,))
-    x = Dense(128, activation='relu')(inp)
-    x = Dense(128, activation='relu')(x)
-    x = Dense(128, activation='relu')(x)
-    return Model(inp, x)
+# def compute_accuracy(y_true, y_pred):
+#     '''Compute classification accuracy with a fixed threshold on distances.
+#     '''
+#     pred = y_pred.ravel() < 0.5
+#     return np.mean(pred == y_true)
 
 
-def modelV3(input_size):
+# def accuracy(y_true, y_pred):
+#     '''Compute classification accuracy with a fixed threshold on distances.
+#     '''
+#     return K.mean(K.equal(y_true, K.cast(y_pred < 0.5, y_true.dtype)))
+
+# def base_modelV3(input_size):
+#     """ Base network
+#     """
+#     inp = Input((input_size,))
+#     x = Dense(128, activation='relu')(inp)
+#     x = Dense(128, activation='relu')(x)
+#     x = Dense(128, activation='relu')(x)
+#     return Model(inp, x)
+
+
+# def modelV3(input_size):
     
-    M_rep = base_modelV3(input_size)
+#     M_rep = base_modelV3(input_size)
     
-    inpa = Input((input_size,))
-    outa = M_rep(inpa)
+#     inpa = Input((input_size,))
+#     outa = M_rep(inpa)
     
-    inpb = Input((input_size,))
-    outb = M_rep(inpb)
+#     inpb = Input((input_size,))
+#     outb = M_rep(inpb)
     
-    out = Lambda(euclidean_distance)([outa, outb])
-#     out = Dense(1, activation='sigmoid')(out)
+#     out = Lambda(euclidean_distance)([outa, outb])
+# #     out = Dense(1, activation='sigmoid')(out)
     
-    M = Model([inpa, inpb], out )
+#     M = Model([inpa, inpb], out )
     
-    opt = Adam(lr=0.0005)
-    M.compile(optimizer=opt, loss=contrastive_loss, metrics=[accuracy])
+#     opt = Adam(lr=0.0005)
+#     M.compile(optimizer=opt, loss=contrastive_loss, metrics=[accuracy])
     
-    return M, M_rep
+#     return M, M_rep
 
 #----------------=-----------------------------------------------------------------------#
 #------------------------------------- SALIENCY MAP -------------------------------------#
@@ -669,6 +671,8 @@ from scipy.linalg import norm
 from sklearn.cluster import KMeans
 from scipy.sparse.csgraph import connected_components
 
+import pdb
+
 def generate_edges(graph, bucketing='epsilon', eps=1e-2, k=3):
     """Generate the set of edges
     """
@@ -770,7 +774,7 @@ def powerWatershed(graph, seeds, bucketing='kmeans', eps=1e-2, k=3, beta=5., eps
 
         edges_till_now += edges
 
-        for (r, comp) in uf.generate_comps():
+        for (_, comp) in uf.generate_comps():
             label_unique = set(np.unique(labels[comp]))
 
             # continue if all points in the component are labelled
@@ -802,12 +806,11 @@ def powerWatershed_multipleLabels(graph, seeds, bucketing='kmeans', eps=1e-2, k=
     """
 
     ans = []
-    for i in np.unique(seeds):
+    for i in np.sort(np.unique(seeds)):
         if i > 0:
             seed_tmp = np.array((seeds == i)*1, dtype=np.int32) + 1
             seed_tmp[np.where(seeds == 0)] = 0
             ans.append(powerWatershed(graph, seed_tmp, bucketing, eps, k, beta, eps_weight))
-
     return np.argmax(ans, 0) + 1
 
 
