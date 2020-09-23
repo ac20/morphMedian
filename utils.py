@@ -737,9 +737,28 @@ def _randomwalk(list_edges, labels, comp, verbose=False):
         else:
             print("\rPython solver relative error is {:02.4f}".format(
                 norm(lap_sparse.dot(x0.reshape(-1, 1))-rhs)), end="")
-
+    pdb.set_trace()
     labels[comp[unlabeled_indices]] = np.ravel(x0)
+    
+    
+def _randomwalkV2(graph_tmp, labels, comp, beta, eps,verbose=False):
+    size = labels.shape[0]
 
+    G = graph_tmp[comp][:, comp]
+    G = make_undirected(G)
+    seeds = np.array(labels[comp], copy=True)+1
+    
+    Gtmp = csr_matrix(G, copy=True)
+    Gtmp.data = np.exp(-1*beta*Gtmp.data/Gtmp.data.std()) + eps
+    
+    lap = csr_matrix(laplacian(Gtmp, normed=False))
+    A, B = _buildAB(lap, np.array(seeds,dtype=np.int32))
+    x0 = _solve_cg(A, B, tol=1e-6, return_full_prob=True)
+    
+   
+    labels[comp[seeds == 0]] = x0[1]
+    
+    
 
 def powerWatershed(graph, seeds, bucketing='kmeans', eps=1e-2, k=3, beta=5., eps_weight=1e-6):
     """Returns the power watershed labelling given the seeds
@@ -786,7 +805,7 @@ def powerWatershed(graph, seeds, bucketing='kmeans', eps=1e-2, k=3, beta=5., eps
                 labels[comp] = l
 
             if len(label_unique) > 2:
-                _randomwalk(edges_till_now, labels, comp)
+                _randomwalkV2(graph, labels, comp, beta, eps_weight)
 
     return labels
 
