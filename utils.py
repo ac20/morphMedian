@@ -702,7 +702,6 @@ def generate_edges(graph, bucketing='epsilon', eps=1e-2, k=3):
 
     yield edges_bucket  # to return the last bucket!
 
-
 def _randomwalk(list_edges, labels, comp, verbose=False):
 
     size = labels.shape[0]
@@ -764,7 +763,7 @@ def powerWatershed(graph, seeds, bucketing='kmeans', eps=1e-2, k=3, beta=5., eps
 
     uf = unionfind(size)
 
-    edge_generator = generate_edges(graph, bucketing, eps, k)
+    edge_generator = generate_edges(graph_tmp, bucketing, eps, k)
     edges_till_now = []
     for edges in edge_generator:
 
